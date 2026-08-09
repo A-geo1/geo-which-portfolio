@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GEO: Which Portfolio?</title>
+<style>
+:root{--g:#087f23;--g2:#116b25;--cream:#f5faf4;--ink:#18301d;--gold:#d7a72c;--red:#a82d2d}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#edf7ee,#fff);font-family:"Times New Roman",Times,serif;color:var(--ink)}
+.wrap{max-width:960px;margin:auto;padding:18px}
+.hero{background:var(--g);color:white;border-radius:24px;padding:22px 20px;text-align:center;box-shadow:0 10px 25px #0002}
+.hero h1{margin:0;font-size:clamp(30px,6vw,54px)}.hero p{margin:7px 0 0;font-size:18px}
+.stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:15px 0}
+.pill{background:white;border:2px solid var(--g);border-radius:999px;padding:8px 15px;font-weight:bold}
+.card{background:#fff;border:3px solid var(--g);border-radius:24px;padding:24px;margin-top:15px;box-shadow:0 8px 20px #0001}
+.meter{height:12px;background:#dce9dd;border-radius:99px;overflow:hidden}.meter i{display:block;height:100%;background:var(--g);width:0;transition:.35s}
+.kicker{text-align:center;color:var(--g);font-weight:bold;letter-spacing:.08em;text-transform:uppercase;margin-top:18px}
+.scenario{font-size:clamp(22px,4vw,32px);line-height:1.35;text-align:center;margin:18px auto 22px;max-width:760px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.choice{min-height:180px;border:3px solid var(--g);background:var(--cream);border-radius:20px;padding:20px;cursor:pointer;transition:.15s;position:relative}
+.choice:hover{transform:translateY(-4px);box-shadow:0 8px 18px #087f2330}.choice h2{margin:4px 0 10px;font-size:25px;color:var(--g)}.choice p{margin:0;line-height:1.45;font-size:16px}
+.choice .emoji{font-size:40px}
+.feedback{margin-top:18px;padding:18px;border-radius:18px;text-align:center;font-size:18px}.correct{background:#e7f6e9;border:2px solid var(--g)}.wrong{background:#fff0f0;border:2px solid var(--red)}
+button.next,.start{background:var(--g);color:white;border:0;border-radius:999px;padding:13px 25px;font:inherit;font-weight:bold;font-family:"Times New Roman",Times,serif;cursor:pointer;margin-top:12px}
+.hidden{display:none}.result{text-align:center}.score{font-size:70px;color:var(--g);font-weight:bold}.stamp{display:inline-block;background:#fff6d7;border:2px dashed var(--gold);padding:9px 16px;border-radius:12px;font-weight:bold}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}.confetti span{position:absolute;width:9px;height:18px;animation:fall 1.4s linear forwards}@keyframes fall{to{transform:translateY(105vh) rotate(600deg);opacity:0}}
+@media(max-width:650px){.choices{grid-template-columns:1fr}.choice{min-height:auto}.wrap{padding:10px}.card{padding:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="hero"><h1>🎯 GEO: Which Portfolio?</h1></div>
+<div class="stats">
+<div class="pill">⭐ Score: <span id="score">0</span></div>
+<div class="pill">🔥 Streak: <span id="streak">0</span></div>
+<div class="pill">📍 <span id="count">0</span>/10</div>
+</div>
+<div class="card">
+<div class="meter"><i id="bar"></i></div>
+<div id="game"></div>
+</div>
+</div>
+<div class="confetti" id="confetti"></div>
+<script>
+const qs=[
+["A potential international university partner needs strategic assessment, due diligence and agreement planning.","Partnership & Engagement","🤝","This is about building and stewarding the institutional relationship."],
+["A student is matched with an overseas internship and needs help with nominations, matching and logistics.","Global Mobility","✈️","This is a mobility opportunity being activated through an institutional relationship."],
+["GEO is coordinating governance around an institutional partnership and working with other University offices.","Partnership & Engagement","🤝","Governance and institutional coordination sit with Partnership & Engagement."],
+["A faculty member takes part in an international mobility opportunity.","Global Mobility","✈️","The partnership may enable it, but the mobility activity itself sits here."],
+["GEO is strengthening research and knowledge networks with international collaborators.","Partnership & Engagement","🤝","Research and knowledge networks are part of the partnership ecosystem."],
+["An exchange opportunity needs participant nominations, matching and operational coordination.","Global Mobility","✈️","That is the Global Mobility lifecycle in action."],
+["A partnership needs long-term stewardship after the agreement is signed.","Partnership & Engagement","🤝","The work does not end when an agreement is signed; stewardship continues."],
+["Students and staff are being connected to international professional development opportunities.","Global Mobility","✈️","Professional development opportunities are part of Global Mobility."],
+["GEO is managing institutional due diligence before a collaboration moves forward.","Partnership & Engagement","🤝","Due diligence is a core Partnership & Engagement function."],
+["A mobility programme needs participant recruitment, financial administration and logistics.","Global Mobility","✈️","Those are operational elements of the Global Mobility lifecycle."]
+];
+let n=0,score=0,streak=0,locked=false;
+const game=document.getElementById('game'), scoreEl=document.getElementById('score'), streakEl=document.getElementById('streak'), countEl=document.getElementById('count'), bar=document.getElementById('bar');
+function render(){
+ locked=false; countEl.textContent=n; bar.style.width=(n/qs.length*100)+'%';
+ if(n>=qs.length){finish();return}
+ const q=qs[n];
+ game.innerHTML=`<div class="kicker">Scenario ${n+1}</div>
+ <div class="scenario">“${q[0]}”</div>
+ <div class="choices">
+ <button class="choice" onclick="answer('Partnership & Engagement')"><div class="emoji">🤝</div><h2>Partnership & Engagement</h2><p>Strategic partnerships • Governance • Due diligence • Research & knowledge networks</p></button>
+ <button class="choice" onclick="answer('Global Mobility')"><div class="emoji">✈️</div><h2>Global Mobility</h2><p>Exchanges • Student/faculty mobility • Internships • Professional development</p></button>
+ </div>`;
+}
+function answer(choice){
+ if(locked)return; locked=true;
+ const q=qs[n], ok=choice===q[1];
+ if(ok){score+=100+streak*25;streak++;burst()}else{streak=0}
+ scoreEl.textContent=score;streakEl.textContent=streak;
+ const div=document.createElement('div');div.className='feedback '+(ok?'correct':'wrong');
+ div.innerHTML=`<b>${ok?'🎉 Nailed it!':'🤔 Close — take another look!'}</b><br>${ok?q[3]:'The better fit is <b>'+q[1]+'</b>. '+q[3]}<br><button class="next" onclick="n++;render()">Next →</button>`;
+ game.appendChild(div);
+}
+function finish(){
+ bar.style.width='100%'; let max=qs.length*100+25*45;
+ let pct=Math.round(score/max*100);
+ let title=pct>=85?'🏆 GEO Portfolio Pro':pct>=65?'⭐ Strong GEO Instincts':'🧭 Keep Exploring GEO';
+ game.innerHTML=`<div class="result"><div class="stamp">CHALLENGE COMPLETE</div><h2>${title}</h2><div class="score">${score}</div><p>You sorted ${qs.length} real-world GEO-style scenarios between the two portfolios.</p><p><b>Quick takeaway:</b> Partnership & Engagement builds and stewards the institutional relationship; Global Mobility activates opportunities for students, faculty and staff.</p><button class="start" onclick="n=0;score=0;streak=0;scoreEl.textContent=0;streakEl.textContent=0;render()">🔄 Play again</button></div>`;
+ burst(true);
+}
+function burst(big=false){
+ const c=document.getElementById('confetti');
+ for(let j=0;j<(big?60:18);j++){let s=document.createElement('span');s.style.left=Math.random()*100+'%';s.style.top=(-10-Math.random()*20)+'px';s.style.background=['#087f23','#d7a72c','#ffffff','#4c9f56'][j%4];s.style.transform=`rotate(${Math.random()*360}deg)`;c.appendChild(s);setTimeout(()=>s.remove(),1600)}
+}
+render();
+</script>
+</body></html>
